@@ -26,3 +26,4 @@ Prec_pre_30         ,precipitation at the location of fire upto 30 days prior
 Prec_pre_15         ,precipitation at the location of fire upto 15 days prior
 Prec_pre_7          ,precipitation at the location of fire upto 7 days prior
 Prec_cont           ,precipitation at the location of fire upto day the fire was contained
+remoteness          ,non-dimensional distance to closest city
