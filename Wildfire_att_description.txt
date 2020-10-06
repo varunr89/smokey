@@ -8,22 +8,27 @@ state                ,State of Fire
 discovery_month      ,Month in which Fire was discovered
 putout_time         ,time it took to putout the fire
 disc_pre_year         ,year in which the fire was discovered
-Vegetation            ,Dominant vegetation in the areas
+
+Vegetation            ,Dominant vegetation in the areas (1:Tropical Evergreen Broadleaf Forest,2:Tropical Deciduous Broadleaf Forest,3:Temperate Evergreen Broadleaf Forest ,
+4:Temperate Evergreen Needleleaf Forest TmpENF,5:Temperate Deciduous Broadleaf Forest,6:Boreal Evergreen Needleleaf Forest,7:Boreal Deciduous Needleleaf Forest, 8:Savanna , 9:C3 Grassland/Steppe, 10:C4 Grassland/Steppe, 11:Dense Shrubland 12:Open Shrubland, 13:Tundra Tundra, 14:Desert,15:Polar Desert/Rock/Ice, 16:Secondary Tropical Evergreen Broadleaf Forest, 17:Secondary Tropical Deciduous Broadleaf Forest, 18:Secondary Temperate Evergreen Broadleaf Forest, 19:Secondary Temperate Evergreen Needleleaf Forest
+20:Secondary Temperate Deciduous Broadleaf Forest, 21:Secondary Boreal Evergreen Needleleaf Forest, 22:Secondary Boreal Deciduous Needleleaf Forest, 23:Water/Rivers Water
+24:C3 Cropland, 25:C4 Cropland, 26:C3 Pastureland, 27:C4 Pastureland, 28:Urban land)
+
 fire_mag              ,magnitude of fire intensity (scaled version of fire_size)
-Temp_pre_30         ,temperature at the location of fire upto 30 days prior
-Temp_pre_15         ,temperature at the location of fire upto 15 days prior
-Temp_pre_7          ,temperature at the location of fire upto 7 days prior
-Temp_cont           ,temperature at the location of fire upto day the fire was contained
-Wind_pre_30         ,wind at the location of fire upto 30 days prior
-Wind_pre_15         ,wind at the location of fire upto 15 days prior
-Wind_pre_7          ,wind at the location of fire upto 7 days prior
-Wind_cont           ,wind at the location of fire upto day the fire was contained
-Hum_pre_30          ,humidity at the location of fire upto 30 days prior
-Hum_pre_15          ,humidity at the location of fire upto 15 days prior
-Hum_pre_7           ,humidity at the location of fire upto 7 days prior
-Hum_cont            ,humidity at the location of fire upto day the fire was contained
-Prec_pre_30         ,precipitation at the location of fire upto 30 days prior
-Prec_pre_15         ,precipitation at the location of fire upto 15 days prior
-Prec_pre_7          ,precipitation at the location of fire upto 7 days prior
-Prec_cont           ,precipitation at the location of fire upto day the fire was contained
+Temp_pre_30         ,temperature in deg C at the location of fire upto 30 days prior
+Temp_pre_15         ,temperature in deg C at the location of fire upto 15 days prior
+Temp_pre_7          ,temperature in deg C at the location of fire upto 7 days prior
+Temp_cont           ,temperature in deg C at the location of fire upto day the fire was contained
+Wind_pre_30         ,wind in m/s at the location of fire upto 30 days prior
+Wind_pre_15         ,wind in m/s at the location of fire upto 15 days prior
+Wind_pre_7          ,wind in m/s at the location of fire upto 7 days prior
+Wind_cont           ,wind in m/s at the location of fire upto day the fire was contained
+Hum_pre_30          ,humidity in % at the location of fire upto 30 days prior
+Hum_pre_15          ,humidity in % at the location of fire upto 15 days prior
+Hum_pre_7           ,humidity in % at the location of fire upto 7 days prior
+Hum_cont            ,humidity in % at the location of fire upto day the fire was contained
+Prec_pre_30         ,precipitation in mm at the location of fire upto 30 days prior
+Prec_pre_15         ,precipitation in mm at the location of fire upto 15 days prior
+Prec_pre_7          ,precipitation in mm at the location of fire upto 7 days prior
+Prec_cont           ,precipitation in mm at the location of fire upto day the fire was contained
 remoteness          ,non-dimensional distance to closest city
