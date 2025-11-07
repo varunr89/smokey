@@ -114,8 +114,36 @@
             </div>
         </div>
 
-        <!-- Visualizations will go here -->
-        <div id="visualizations"></div>
+        <!-- Visualizations -->
+        <div id="visualizations">
+            <!-- Row 1: Weather & Fire Risk -->
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">🌡️ Weather & Fire Risk</h2>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Temperature Chart -->
+                    <div class="chart-container">
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="text-lg font-semibold text-gray-700">Temperature Before Fires</h3>
+                            <button onclick="downloadChart('temp-chart')" class="text-sm text-blue-600 hover:text-blue-800">
+                                📷 Save
+                            </button>
+                        </div>
+                        <div id="temp-chart" style="height: 350px;"></div>
+                        <div class="mt-2 text-xs text-gray-500">
+                            ⚠️ Based on fires with complete weather data
+                        </div>
+                    </div>
+
+                    <!-- Humidity/Precipitation Chart (placeholder) -->
+                    <div class="chart-container">
+                        <h3 class="text-lg font-semibold text-gray-700 mb-3">Humidity & Precipitation</h3>
+                        <div id="humidity-chart" style="height: 350px;" class="flex items-center justify-center text-gray-400">
+                            Chart placeholder
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -237,8 +265,8 @@
             // Update display
             document.getElementById('record-count').textContent = data.toLocaleString();
 
-            // TODO: Update all charts
-            console.log(`Filtered to ${data.length} records`);
+            // Render all charts with filtered data
+            renderAllCharts();
         }
 
         function resetFilters() {
@@ -259,6 +287,110 @@
             updateFilteredData();
         }
 
+        function renderTemperatureChart(data) {
+            // Filter data with valid temperature readings
+            const validData = data.filter(r =>
+                r.Temp_pre_30 !== null &&
+                r.Temp_pre_15 !== null &&
+                r.Temp_pre_7 !== null &&
+                r.Temp_cont !== null
+            );
+
+            // Group by fire size class
+            const sizeClasses = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+            const traces = [];
+
+            sizeClasses.forEach(sizeClass => {
+                const classData = validData.filter(r => r.fire_size_class === sizeClass);
+
+                if (classData.length === 0) return;
+
+                // Calculate averages for each time window
+                const avgTemp30 = classData.reduce((sum, r) => sum + r.Temp_pre_30, 0) / classData.length;
+                const avgTemp15 = classData.reduce((sum, r) => sum + r.Temp_pre_15, 0) / classData.length;
+                const avgTemp7 = classData.reduce((sum, r) => sum + r.Temp_pre_7, 0) / classData.length;
+                const avgTempCont = classData.reduce((sum, r) => sum + r.Temp_cont, 0) / classData.length;
+
+                traces.push({
+                    x: ['-30 days', '-15 days', '-7 days', 'Containment'],
+                    y: [avgTemp30, avgTemp15, avgTemp7, avgTempCont],
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    name: `Class ${sizeClass} (${classData.length})`,
+                    line: { width: 2 },
+                    marker: { size: 8 }
+                });
+            });
+
+            const layout = {
+                xaxis: {
+                    title: 'Time Window',
+                    showgrid: true
+                },
+                yaxis: {
+                    title: 'Average Temperature (°C)',
+                    showgrid: true
+                },
+                hovermode: 'closest',
+                showlegend: true,
+                legend: {
+                    x: 1,
+                    xanchor: 'right',
+                    y: 1
+                },
+                margin: { l: 50, r: 50, t: 20, b: 50 }
+            };
+
+            const config = {
+                responsive: true,
+                displayModeBar: true,
+                displaylogo: false,
+                modeBarButtonsToRemove: ['pan2d', 'lasso2d', 'select2d']
+            };
+
+            Plotly.newPlot('temp-chart', traces, layout, config);
+        }
+
+        function downloadChart(chartId) {
+            Plotly.downloadImage(chartId, {
+                format: 'png',
+                width: 1200,
+                height: 600,
+                filename: `smokey-${chartId}`
+            });
+        }
+
+        function renderAllCharts() {
+            const data = getFilteredData();
+            renderTemperatureChart(data);
+            // More charts will be added here
+        }
+
+        function getFilteredData() {
+            let data = [...filteredData];
+
+            // Apply all current filters
+            if (currentFilters.state !== 'all') {
+                data = data.filter(r => r.state === currentFilters.state);
+            }
+            if (currentFilters.region !== 'all') {
+                data = data.filter(r => r.region === currentFilters.region);
+            }
+            if (currentFilters.cause === 'human') {
+                data = data.filter(r => r.is_human_caused);
+            } else if (currentFilters.cause === 'natural') {
+                data = data.filter(r => r.stat_cause_descr === 'Lightning');
+            } else if (currentFilters.cause !== 'all') {
+                data = data.filter(r => r.stat_cause_descr === currentFilters.cause);
+            }
+            if (currentFilters.sizeClass !== 'all') {
+                data = data.filter(r => r.fire_size_class === currentFilters.sizeClass);
+            }
+            data = data.filter(r => r.disc_pre_year >= currentFilters.yearMin && r.disc_pre_year <= currentFilters.yearMax);
+
+            return data;
+        }
+
         // Initialize dashboard
         async function initDashboard() {
             try {
@@ -270,6 +402,11 @@
 
                 updateLoadingText('Preparing visualizations...', 'Almost ready!');
                 initializeFilters();
+
+                // Initial chart render
+                setTimeout(() => {
+                    renderAllCharts();
+                }, 100);
 
                 // Hide loading, show dashboard
                 setTimeout(() => {
