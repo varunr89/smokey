@@ -134,11 +134,17 @@
                         </div>
                     </div>
 
-                    <!-- Humidity/Precipitation Chart (placeholder) -->
+                    <!-- Humidity/Precipitation Chart -->
                     <div class="chart-container">
-                        <h3 class="text-lg font-semibold text-gray-700 mb-3">Humidity & Precipitation</h3>
-                        <div id="humidity-chart" style="height: 350px;" class="flex items-center justify-center text-gray-400">
-                            Chart placeholder
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="text-lg font-semibold text-gray-700">Humidity & Precipitation</h3>
+                            <button onclick="downloadChart('humidity-chart')" class="text-sm text-blue-600 hover:text-blue-800">
+                                📷 Save
+                            </button>
+                        </div>
+                        <div id="humidity-chart" style="height: 350px;"></div>
+                        <div class="mt-2 text-xs text-gray-500">
+                            Blue bars: Humidity (%), Green line: Precipitation (mm)
                         </div>
                     </div>
                 </div>
@@ -351,6 +357,93 @@
             Plotly.newPlot('temp-chart', traces, layout, config);
         }
 
+        function renderHumidityPrecipChart(data) {
+            // Filter data with valid humidity and precipitation readings
+            const validData = data.filter(r =>
+                r.Hum_pre_30 !== null && r.Hum_pre_15 !== null && r.Hum_pre_7 !== null && r.Hum_cont !== null &&
+                r.Prec_pre_30 !== null && r.Prec_pre_15 !== null && r.Prec_pre_7 !== null && r.Prec_cont !== null
+            );
+
+            if (validData.length === 0) {
+                document.getElementById('humidity-chart').innerHTML =
+                    '<div class="flex items-center justify-center h-full text-gray-400">No data with complete weather records</div>';
+                return;
+            }
+
+            // Calculate averages
+            const avgHum30 = validData.reduce((sum, r) => sum + r.Hum_pre_30, 0) / validData.length;
+            const avgHum15 = validData.reduce((sum, r) => sum + r.Hum_pre_15, 0) / validData.length;
+            const avgHum7 = validData.reduce((sum, r) => sum + r.Hum_pre_7, 0) / validData.length;
+            const avgHumCont = validData.reduce((sum, r) => sum + r.Hum_cont, 0) / validData.length;
+
+            const avgPrec30 = validData.reduce((sum, r) => sum + r.Prec_pre_30, 0) / validData.length;
+            const avgPrec15 = validData.reduce((sum, r) => sum + r.Prec_pre_15, 0) / validData.length;
+            const avgPrec7 = validData.reduce((sum, r) => sum + r.Prec_pre_7, 0) / validData.length;
+            const avgPrecCont = validData.reduce((sum, r) => sum + r.Prec_cont, 0) / validData.length;
+
+            const timeWindows = ['-30 days', '-15 days', '-7 days', 'Containment'];
+
+            // Humidity bars
+            const humidityTrace = {
+                x: timeWindows,
+                y: [avgHum30, avgHum15, avgHum7, avgHumCont],
+                type: 'bar',
+                name: 'Humidity (%)',
+                marker: {
+                    color: 'rgba(54, 162, 235, 0.7)',
+                    line: { color: 'rgba(54, 162, 235, 1)', width: 2 }
+                },
+                yaxis: 'y'
+            };
+
+            // Precipitation line
+            const precipTrace = {
+                x: timeWindows,
+                y: [avgPrec30, avgPrec15, avgPrec7, avgPrecCont],
+                type: 'scatter',
+                mode: 'lines+markers',
+                name: 'Precipitation (mm)',
+                line: { color: 'rgba(75, 192, 192, 1)', width: 3 },
+                marker: { size: 10, color: 'rgba(75, 192, 192, 1)' },
+                yaxis: 'y2'
+            };
+
+            const layout = {
+                xaxis: {
+                    title: 'Time Window',
+                    showgrid: true
+                },
+                yaxis: {
+                    title: 'Humidity (%)',
+                    titlefont: { color: 'rgba(54, 162, 235, 1)' },
+                    tickfont: { color: 'rgba(54, 162, 235, 1)' },
+                    showgrid: true,
+                    range: [0, 100]
+                },
+                yaxis2: {
+                    title: 'Precipitation (mm)',
+                    titlefont: { color: 'rgba(75, 192, 192, 1)' },
+                    tickfont: { color: 'rgba(75, 192, 192, 1)' },
+                    overlaying: 'y',
+                    side: 'right',
+                    showgrid: false
+                },
+                hovermode: 'x unified',
+                showlegend: true,
+                legend: { x: 0, y: 1.1, orientation: 'h' },
+                margin: { l: 50, r: 50, t: 20, b: 50 }
+            };
+
+            const config = {
+                responsive: true,
+                displayModeBar: true,
+                displaylogo: false,
+                modeBarButtonsToRemove: ['pan2d', 'lasso2d', 'select2d']
+            };
+
+            Plotly.newPlot('humidity-chart', [humidityTrace, precipTrace], layout, config);
+        }
+
         function downloadChart(chartId) {
             Plotly.downloadImage(chartId, {
                 format: 'png',
@@ -363,6 +456,7 @@
         function renderAllCharts() {
             const data = getFilteredData();
             renderTemperatureChart(data);
+            renderHumidityPrecipChart(data);
             // More charts will be added here
         }
 
