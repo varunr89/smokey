@@ -58,8 +58,61 @@
             <p class="text-gray-600">Exploring U.S. Wildfire Patterns (1991-2015)</p>
         </header>
 
-        <!-- Filter bar will go here -->
-        <div id="filters" class="mb-6"></div>
+        <!-- Filter Bar -->
+        <div id="filters" class="bg-white rounded-lg shadow-md p-6 mb-6 sticky top-4 z-40">
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <!-- Geography Filters -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">📍 State</label>
+                    <select id="filter-state" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                        <option value="all">All States</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">🗺️ Region</label>
+                    <select id="filter-region" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                        <option value="all">All Regions</option>
+                        <option value="West">West</option>
+                        <option value="Midwest">Midwest</option>
+                        <option value="South">South</option>
+                        <option value="Northeast">Northeast</option>
+                    </select>
+                </div>
+
+                <!-- Year Range (placeholder for now) -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">📅 Year Range</label>
+                    <div class="text-sm text-gray-500 py-2">1991 - 2015</div>
+                </div>
+
+                <!-- Fire Cause (placeholder) -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">🔥 Cause</label>
+                    <select id="filter-cause" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                        <option value="all">All Causes</option>
+                    </select>
+                </div>
+
+                <!-- Fire Size Class (placeholder) -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">📏 Size</label>
+                    <select id="filter-size" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                        <option value="all">All Sizes</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Filter Summary -->
+            <div class="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
+                <div id="filter-summary" class="text-sm text-gray-600">
+                    Showing: <span id="record-count" class="font-bold text-blue-600">0</span> fires
+                </div>
+                <button id="reset-filters" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm font-semibold">
+                    Reset All Filters
+                </button>
+            </div>
+        </div>
 
         <!-- Visualizations will go here -->
         <div id="visualizations"></div>
@@ -69,6 +122,142 @@
         // Global data storage
         let rawData = [];
         let filteredData = [];
+
+        // Filter state
+        let currentFilters = {
+            state: 'all',
+            region: 'all',
+            yearMin: 1991,
+            yearMax: 2015,
+            cause: 'all',
+            sizeClass: 'all'
+        };
+
+        function initializeFilters() {
+            // Populate state dropdown
+            const states = [...new Set(filteredData.map(r => r.state))].sort();
+            const stateSelect = document.getElementById('filter-state');
+            states.forEach(state => {
+                const option = document.createElement('option');
+                option.value = state;
+                option.textContent = state;
+                stateSelect.appendChild(option);
+            });
+
+            // Populate cause dropdown
+            const causes = [...new Set(filteredData.map(r => r.stat_cause_descr))].filter(c => c).sort();
+            const causeSelect = document.getElementById('filter-cause');
+            causeSelect.innerHTML = '<option value="all">All Causes</option>';
+            causeSelect.innerHTML += '<option value="human">Human-Caused</option>';
+            causeSelect.innerHTML += '<option value="natural">Natural (Lightning)</option>';
+            causeSelect.innerHTML += '<option disabled>──────────</option>';
+            causes.forEach(cause => {
+                const option = document.createElement('option');
+                option.value = cause;
+                option.textContent = cause;
+                causeSelect.appendChild(option);
+            });
+
+            // Populate size class dropdown
+            const sizeSelect = document.getElementById('filter-size');
+            ['A', 'B', 'C', 'D', 'E', 'F', 'G'].forEach(size => {
+                const option = document.createElement('option');
+                option.value = size;
+                option.textContent = `Class ${size}`;
+                sizeSelect.appendChild(option);
+            });
+
+            // Add event listeners
+            document.getElementById('filter-state').addEventListener('change', handleFilterChange);
+            document.getElementById('filter-region').addEventListener('change', handleFilterChange);
+            document.getElementById('filter-cause').addEventListener('change', handleFilterChange);
+            document.getElementById('filter-size').addEventListener('change', handleFilterChange);
+            document.getElementById('reset-filters').addEventListener('click', resetFilters);
+
+            // Initial update
+            updateFilteredData();
+        }
+
+        function handleFilterChange(event) {
+            const filterId = event.target.id.replace('filter-', '');
+
+            if (filterId === 'state') {
+                currentFilters.state = event.target.value;
+                // Reset region if state selected
+                if (currentFilters.state !== 'all') {
+                    currentFilters.region = 'all';
+                    document.getElementById('filter-region').value = 'all';
+                }
+            } else if (filterId === 'region') {
+                currentFilters.region = event.target.value;
+                // Reset state if region selected
+                if (currentFilters.region !== 'all') {
+                    currentFilters.state = 'all';
+                    document.getElementById('filter-state').value = 'all';
+                }
+            } else if (filterId === 'cause') {
+                currentFilters.cause = event.target.value;
+            } else if (filterId === 'size') {
+                currentFilters.sizeClass = event.target.value;
+            }
+
+            updateFilteredData();
+        }
+
+        function updateFilteredData() {
+            let data = [...filteredData];
+
+            // Apply state filter
+            if (currentFilters.state !== 'all') {
+                data = data.filter(r => r.state === currentFilters.state);
+            }
+
+            // Apply region filter
+            if (currentFilters.region !== 'all') {
+                data = data.filter(r => r.region === currentFilters.region);
+            }
+
+            // Apply cause filter
+            if (currentFilters.cause === 'human') {
+                data = data.filter(r => r.is_human_caused);
+            } else if (currentFilters.cause === 'natural') {
+                data = data.filter(r => r.stat_cause_descr === 'Lightning');
+            } else if (currentFilters.cause !== 'all') {
+                data = data.filter(r => r.stat_cause_descr === currentFilters.cause);
+            }
+
+            // Apply size class filter
+            if (currentFilters.sizeClass !== 'all') {
+                data = data.filter(r => r.fire_size_class === currentFilters.sizeClass);
+            }
+
+            // Apply year range filter
+            data = data.filter(r => r.disc_pre_year >= currentFilters.yearMin && r.disc_pre_year <= currentFilters.yearMax);
+
+            // Update display
+            document.getElementById('record-count').textContent = data.toLocaleString();
+
+            // TODO: Update all charts
+            console.log(`Filtered to ${data.length} records`);
+        }
+
+        function resetFilters() {
+            currentFilters = {
+                state: 'all',
+                region: 'all',
+                yearMin: 1991,
+                yearMax: 2015,
+                cause: 'all',
+                sizeClass: 'all'
+            };
+
+            document.getElementById('filter-state').value = 'all';
+            document.getElementById('filter-region').value = 'all';
+            document.getElementById('filter-cause').value = 'all';
+            document.getElementById('filter-size').value = 'all';
+
+            updateFilteredData();
+        }
 
         // Initialize dashboard
         async function initDashboard() {
@@ -80,6 +269,7 @@
                 cleanData();
 
                 updateLoadingText('Preparing visualizations...', 'Almost ready!');
+                initializeFilters();
 
                 // Hide loading, show dashboard
                 setTimeout(() => {
