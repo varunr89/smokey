@@ -149,6 +149,91 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Row 2: When Fires Strike -->
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">📅 When Fires Strike</h2>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Seasonal Heatmap -->
+                    <div class="chart-container">
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="text-lg font-semibold text-gray-700">Seasonal Patterns</h3>
+                            <button onclick="downloadChart('heatmap-chart')" class="text-sm text-blue-600 hover:text-blue-800">
+                                📷 Save
+                            </button>
+                        </div>
+                        <div id="heatmap-chart" style="height: 500px;"></div>
+                        <div class="mt-2 text-xs text-gray-500">
+                            Darker red = more fires. Click to explore specific periods.
+                        </div>
+                    </div>
+
+                    <!-- Year-over-Year Trends -->
+                    <div class="chart-container">
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="text-lg font-semibold text-gray-700">Year-over-Year Trends</h3>
+                            <button onclick="downloadChart('trends-chart')" class="text-sm text-blue-600 hover:text-blue-800">
+                                📷 Save
+                            </button>
+                        </div>
+                        <div id="trends-chart" style="height: 500px;"></div>
+                        <div class="mt-2 text-xs text-gray-500">
+                            Shows fire counts by year. Separate lines for top causes.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 3: Fire Causes & Characteristics -->
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">🔥 Fire Causes & Characteristics</h2>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Cause Breakdown -->
+                    <div class="chart-container">
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="text-lg font-semibold text-gray-700">What Starts Fires?</h3>
+                            <button onclick="downloadChart('cause-chart')" class="text-sm text-blue-600 hover:text-blue-800">
+                                📷 Save
+                            </button>
+                        </div>
+                        <div id="cause-chart" style="height: 400px;"></div>
+                        <div class="mt-2 text-sm text-gray-600 bg-yellow-50 p-3 rounded border-l-4 border-yellow-400">
+                            <strong>Prevention Tip:</strong> <span id="prevention-tip">Most fires are human-caused and preventable!</span>
+                        </div>
+                    </div>
+
+                    <!-- Fire Size Distribution -->
+                    <div class="chart-container">
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="text-lg font-semibold text-gray-700">Fire Size Distribution</h3>
+                            <button onclick="downloadChart('size-chart')" class="text-sm text-blue-600 hover:text-blue-800">
+                                📷 Save
+                            </button>
+                        </div>
+                        <div id="size-chart" style="height: 400px;"></div>
+                        <div class="mt-2 text-xs text-gray-500">
+                            Most fires are small (Class A-B), but large fires (F-G) burn the most acres.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 4: Geographic Overview -->
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">🗺️ Geographic Overview</h2>
+                <div class="chart-container">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-lg font-semibold text-gray-700">U.S. Fire Density by State</h3>
+                        <button onclick="downloadChart('map-chart')" class="text-sm text-blue-600 hover:text-blue-800">
+                            📷 Save
+                        </button>
+                    </div>
+                    <div id="map-chart" style="height: 500px;"></div>
+                    <div class="mt-2 text-xs text-gray-500">
+                        Click a state to filter entire dashboard to that region.
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -453,11 +538,489 @@
             });
         }
 
+        function renderSeasonalHeatmap(data) {
+            // Create matrix: years (y) x months (x)
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const years = [];
+            for (let y = 1991; y <= 2015; y++) {
+                years.push(y);
+            }
+
+            // Count fires for each month-year combination
+            const matrix = [];
+            const counts = {};
+
+            data.forEach(row => {
+                const year = row.disc_pre_year;
+                const month = row.discovery_month;
+                const key = `${year}-${month}`;
+                counts[key] = (counts[key] || 0) + 1;
+            });
+
+            // Build matrix (years as rows, months as columns)
+            years.forEach(year => {
+                const row = [];
+                months.forEach(month => {
+                    const key = `${year}-${month}`;
+                    row.push(counts[key] || 0);
+                });
+                matrix.push(row);
+            });
+
+            const trace = {
+                z: matrix,
+                x: months,
+                y: years,
+                type: 'heatmap',
+                colorscale: [
+                    [0, 'rgb(255, 255, 255)'],
+                    [0.2, 'rgb(255, 237, 160)'],
+                    [0.4, 'rgb(254, 178, 76)'],
+                    [0.6, 'rgb(253, 141, 60)'],
+                    [0.8, 'rgb(240, 59, 32)'],
+                    [1, 'rgb(189, 0, 38)']
+                ],
+                colorbar: {
+                    title: 'Fire Count',
+                    thickness: 15
+                },
+                hovertemplate: '<b>%{y} %{x}</b><br>Fires: %{z}<extra></extra>'
+            };
+
+            const layout = {
+                xaxis: {
+                    title: 'Month',
+                    side: 'bottom',
+                    tickmode: 'linear'
+                },
+                yaxis: {
+                    title: 'Year',
+                    autorange: 'reversed',
+                    tickmode: 'linear',
+                    dtick: 2
+                },
+                margin: { l: 60, r: 50, t: 20, b: 60 }
+            };
+
+            const config = {
+                responsive: true,
+                displayModeBar: true,
+                displaylogo: false,
+                modeBarButtonsToRemove: ['pan2d', 'lasso2d', 'select2d', 'zoom2d']
+            };
+
+            Plotly.newPlot('heatmap-chart', [trace], layout, config);
+        }
+
+        function renderYearlyTrends(data) {
+            // Count total fires per year
+            const yearCounts = {};
+            const causeCounts = {};
+
+            data.forEach(row => {
+                const year = row.disc_pre_year;
+                yearCounts[year] = (yearCounts[year] || 0) + 1;
+
+                const cause = row.stat_cause_descr || 'Unknown';
+                if (!causeCounts[cause]) {
+                    causeCounts[cause] = {};
+                }
+                causeCounts[cause][year] = (causeCounts[cause][year] || 0) + 1;
+            });
+
+            // Get top 5 causes by total count
+            const topCauses = Object.entries(causeCounts)
+                .map(([cause, years]) => ({
+                    cause,
+                    total: Object.values(years).reduce((a, b) => a + b, 0)
+                }))
+                .sort((a, b) => b.total - a.total)
+                .slice(0, 5)
+                .map(c => c.cause);
+
+            const years = [];
+            for (let y = 1991; y <= 2015; y++) {
+                years.push(y);
+            }
+
+            const traces = [];
+
+            // Total fires trace
+            traces.push({
+                x: years,
+                y: years.map(y => yearCounts[y] || 0),
+                type: 'scatter',
+                mode: 'lines+markers',
+                name: 'Total Fires',
+                line: { width: 3, color: 'rgb(0, 0, 0)' },
+                marker: { size: 6 }
+            });
+
+            // Top causes traces
+            const colors = [
+                'rgb(255, 99, 71)',   // Red
+                'rgb(255, 159, 64)',  // Orange
+                'rgb(75, 192, 192)',  // Teal
+                'rgb(54, 162, 235)',  // Blue
+                'rgb(153, 102, 255)'  // Purple
+            ];
+
+            topCauses.forEach((cause, idx) => {
+                traces.push({
+                    x: years,
+                    y: years.map(y => causeCounts[cause][y] || 0),
+                    type: 'scatter',
+                    mode: 'lines',
+                    name: cause,
+                    line: { width: 2, color: colors[idx] },
+                    visible: 'legendonly'  // Hidden by default, click to show
+                });
+            });
+
+            const layout = {
+                xaxis: {
+                    title: 'Year',
+                    showgrid: true,
+                    dtick: 2
+                },
+                yaxis: {
+                    title: 'Number of Fires',
+                    showgrid: true
+                },
+                hovermode: 'x unified',
+                showlegend: true,
+                legend: {
+                    x: 0,
+                    y: 1,
+                    bgcolor: 'rgba(255, 255, 255, 0.8)'
+                },
+                margin: { l: 60, r: 30, t: 20, b: 60 }
+            };
+
+            const config = {
+                responsive: true,
+                displayModeBar: true,
+                displaylogo: false,
+                modeBarButtonsToRemove: ['pan2d', 'lasso2d', 'select2d']
+            };
+
+            Plotly.newPlot('trends-chart', traces, layout, config);
+        }
+
+        function renderCauseDonut(data) {
+            // Count fires by cause
+            const causeCounts = {};
+            data.forEach(row => {
+                const cause = row.stat_cause_descr || 'Unknown';
+                causeCounts[cause] = (causeCounts[cause] || 0) + 1;
+            });
+
+            // Sort by count
+            const sortedCauses = Object.entries(causeCounts)
+                .sort((a, b) => b[1] - a[1]);
+
+            const labels = sortedCauses.map(c => c[0]);
+            const values = sortedCauses.map(c => c[1]);
+
+            // Color by human vs natural
+            const colors = labels.map(cause => {
+                const humanCauses = ['Arson', 'Debris Burning', 'Equipment Use', 'Campfire',
+                                    'Children', 'Smoking', 'Fireworks', 'Railroad', 'Powerline', 'Structure'];
+                if (humanCauses.includes(cause)) {
+                    return 'rgba(255, 99, 71, 0.8)';  // Red for human
+                } else if (cause === 'Lightning') {
+                    return 'rgba(54, 162, 235, 0.8)';  // Blue for natural
+                } else {
+                    return 'rgba(150, 150, 150, 0.8)';  // Gray for unknown
+                }
+            });
+
+            const trace = {
+                labels: labels,
+                values: values,
+                type: 'pie',
+                hole: 0.4,  // Donut hole
+                marker: {
+                    colors: colors,
+                    line: { color: 'white', width: 2 }
+                },
+                textposition: 'outside',
+                textinfo: 'label+percent',
+                hovertemplate: '<b>%{label}</b><br>Count: %{value}<br>Percentage: %{percent}<extra></extra>'
+            };
+
+            // Calculate human vs natural percentage
+            const humanCount = data.filter(r => r.is_human_caused).length;
+            const humanPercent = ((humanCount / data.length) * 100).toFixed(1);
+
+            const layout = {
+                annotations: [{
+                    text: `${humanPercent}%<br>Human<br>Caused`,
+                    x: 0.5,
+                    y: 0.5,
+                    font: { size: 18, color: 'rgb(255, 99, 71)' },
+                    showarrow: false
+                }],
+                showlegend: true,
+                legend: {
+                    orientation: 'v',
+                    x: 1.1,
+                    y: 0.5
+                },
+                margin: { l: 20, r: 150, t: 20, b: 20 }
+            };
+
+            const config = {
+                responsive: true,
+                displayModeBar: true,
+                displaylogo: false,
+                modeBarButtonsToRemove: ['pan2d', 'lasso2d', 'select2d', 'zoom2d']
+            };
+
+            Plotly.newPlot('cause-chart', [trace], layout, config);
+
+            // Update prevention tip
+            updatePreventionTip(sortedCauses[0][0]);
+        }
+
+        function updatePreventionTip(topCause) {
+            const tips = {
+                'Debris Burning': 'Check local burn bans before burning debris. Keep fires small and attended.',
+                'Arson': 'Report suspicious activity. Arson is a crime with serious consequences.',
+                'Lightning': 'Natural fires are part of ecosystem cycles, but stay alert during dry storms.',
+                'Miscellaneous': 'Stay aware of fire conditions and follow local fire safety guidelines.',
+                'Equipment Use': 'Maintain equipment properly. Avoid using spark-producing tools in dry conditions.',
+                'Campfire': 'Never leave campfires unattended. Drown fires completely before leaving.',
+                'Children': 'Teach children about fire safety. Keep matches and lighters out of reach.',
+                'Smoking': 'Dispose of cigarettes properly. Never throw lit cigarettes from vehicles.',
+                'Railroad': 'Report track sparking and vegetation overgrowth near railways.',
+                'Fireworks': 'Follow local fireworks laws. Use in clear areas away from dry vegetation.'
+            };
+
+            const tip = tips[topCause] || 'Most fires are human-caused and preventable!';
+            document.getElementById('prevention-tip').textContent = tip;
+        }
+
+        function renderSizeHistogram(data) {
+            // Get fire sizes (in acres)
+            const sizes = data.map(r => r.fire_size).filter(s => s && s > 0);
+
+            if (sizes.length === 0) {
+                document.getElementById('size-chart').innerHTML =
+                    '<div class="flex items-center justify-center h-full text-gray-400">No size data available</div>';
+                return;
+            }
+
+            // Calculate statistics
+            const mean = sizes.reduce((a, b) => a + b, 0) / sizes.length;
+            const sorted = [...sizes].sort((a, b) => a - b);
+            const median = sorted[Math.floor(sorted.length / 2)];
+            const max = Math.max(...sizes);
+
+            const trace = {
+                x: sizes,
+                type: 'histogram',
+                nbinsx: 50,
+                marker: {
+                    color: 'rgba(255, 159, 64, 0.7)',
+                    line: {
+                        color: 'rgba(255, 159, 64, 1)',
+                        width: 1
+                    }
+                },
+                hovertemplate: 'Size Range: %{x}<br>Count: %{y}<extra></extra>'
+            };
+
+            const layout = {
+                xaxis: {
+                    title: 'Fire Size (acres)',
+                    type: 'log',  // Logarithmic scale for wide range
+                    showgrid: true
+                },
+                yaxis: {
+                    title: 'Number of Fires',
+                    showgrid: true
+                },
+                shapes: [
+                    // Mean line
+                    {
+                        type: 'line',
+                        x0: mean,
+                        x1: mean,
+                        y0: 0,
+                        y1: 1,
+                        yref: 'paper',
+                        line: {
+                            color: 'red',
+                            width: 2,
+                            dash: 'dash'
+                        }
+                    },
+                    // Median line
+                    {
+                        type: 'line',
+                        x0: median,
+                        x1: median,
+                        y0: 0,
+                        y1: 1,
+                        yref: 'paper',
+                        line: {
+                            color: 'blue',
+                            width: 2,
+                            dash: 'dot'
+                        }
+                    }
+                ],
+                annotations: [
+                    {
+                        x: mean,
+                        y: 0.9,
+                        yref: 'paper',
+                        text: `Mean: ${mean.toFixed(1)} acres`,
+                        showarrow: true,
+                        arrowhead: 2,
+                        ax: 40,
+                        ay: -40,
+                        bgcolor: 'rgba(255, 255, 255, 0.8)',
+                        bordercolor: 'red'
+                    },
+                    {
+                        x: median,
+                        y: 0.7,
+                        yref: 'paper',
+                        text: `Median: ${median.toFixed(1)} acres`,
+                        showarrow: true,
+                        arrowhead: 2,
+                        ax: -40,
+                        ay: -40,
+                        bgcolor: 'rgba(255, 255, 255, 0.8)',
+                        bordercolor: 'blue'
+                    }
+                ],
+                margin: { l: 60, r: 30, t: 20, b: 60 }
+            };
+
+            const config = {
+                responsive: true,
+                displayModeBar: true,
+                displaylogo: false,
+                modeBarButtonsToRemove: ['pan2d', 'lasso2d', 'select2d']
+            };
+
+            Plotly.newPlot('size-chart', [trace], layout, config);
+        }
+
+        function renderUSMap(data) {
+            // Count fires by state
+            const stateCounts = {};
+            const stateData = {};
+
+            data.forEach(row => {
+                const state = row.state;
+                if (!state) return;
+
+                if (!stateCounts[state]) {
+                    stateCounts[state] = 0;
+                    stateData[state] = {
+                        count: 0,
+                        totalSize: 0,
+                        causes: {}
+                    };
+                }
+
+                stateCounts[state]++;
+                stateData[state].count++;
+                stateData[state].totalSize += (row.fire_size || 0);
+
+                const cause = row.stat_cause_descr || 'Unknown';
+                stateData[state].causes[cause] = (stateData[state].causes[cause] || 0) + 1;
+            });
+
+            // Prepare data for choropleth
+            const states = Object.keys(stateCounts);
+            const counts = states.map(s => stateCounts[s]);
+
+            // Get top cause per state
+            const hoverText = states.map(state => {
+                const info = stateData[state];
+                const avgSize = info.totalSize / info.count;
+                const topCause = Object.entries(info.causes)
+                    .sort((a, b) => b[1] - a[1])[0][0];
+
+                return `<b>${state}</b><br>` +
+                       `Fires: ${info.count.toLocaleString()}<br>` +
+                       `Avg Size: ${avgSize.toFixed(1)} acres<br>` +
+                       `Top Cause: ${topCause}`;
+            });
+
+            const trace = {
+                type: 'choropleth',
+                locationmode: 'USA-states',
+                locations: states,
+                z: counts,
+                text: hoverText,
+                hovertemplate: '%{text}<extra></extra>',
+                colorscale: [
+                    [0, 'rgb(255, 255, 255)'],
+                    [0.2, 'rgb(255, 237, 160)'],
+                    [0.4, 'rgb(254, 178, 76)'],
+                    [0.6, 'rgb(253, 141, 60)'],
+                    [0.8, 'rgb(240, 59, 32)'],
+                    [1, 'rgb(189, 0, 38)']
+                ],
+                colorbar: {
+                    title: 'Fire<br>Count',
+                    thickness: 15
+                },
+                marker: {
+                    line: {
+                        color: 'rgb(255, 255, 255)',
+                        width: 2
+                    }
+                }
+            };
+
+            const layout = {
+                geo: {
+                    scope: 'usa',
+                    projection: { type: 'albers usa' },
+                    showlakes: true,
+                    lakecolor: 'rgb(220, 240, 255)'
+                },
+                margin: { l: 0, r: 0, t: 0, b: 0 }
+            };
+
+            const config = {
+                responsive: true,
+                displayModeBar: true,
+                displaylogo: false,
+                modeBarButtonsToRemove: ['pan2d', 'lasso2d', 'select2d', 'zoom2d']
+            };
+
+            Plotly.newPlot('map-chart', [trace], layout, config);
+
+            // Add click handler to filter by state
+            document.getElementById('map-chart').on('plotly_click', function(eventData) {
+                if (eventData.points.length > 0) {
+                    const clickedState = eventData.points[0].location;
+                    document.getElementById('filter-state').value = clickedState;
+                    currentFilters.state = clickedState;
+                    currentFilters.region = 'all';
+                    document.getElementById('filter-region').value = 'all';
+                    updateFilteredData();
+                }
+            });
+        }
+
         function renderAllCharts() {
             const data = getFilteredData();
             renderTemperatureChart(data);
             renderHumidityPrecipChart(data);
-            // More charts will be added here
+            renderSeasonalHeatmap(data);
+            renderYearlyTrends(data);
+            renderCauseDonut(data);
+            renderSizeHistogram(data);
+            renderUSMap(data);
         }
 
         function getFilteredData() {
