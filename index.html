@@ -1308,10 +1308,10 @@
         // Initialize dashboard
         async function initDashboard() {
             try {
-                updateLoadingText('Loading CSV file...', 'Fetching FW_Veg_Rem_Combined.csv');
+                updateLoadingText('Loading wildfire data...', 'Fetching from GitHub (55K records)');
                 await loadData();
 
-                updateLoadingText('Processing data...', 'Cleaning 55,367 records');
+                updateLoadingText('Processing data...', 'Cleaning and validating records');
                 cleanData();
 
                 updateLoadingText('Preparing visualizations...', 'Almost ready!');
@@ -1340,11 +1340,19 @@
 
         function showError(error) {
             document.getElementById('loading').innerHTML = `
-                <div class="text-center p-8">
+                <div class="text-center p-8 max-w-2xl mx-auto">
                     <h2 class="text-2xl font-bold text-red-600 mb-4">⚠️ Error Loading Data</h2>
                     <p class="text-gray-700 mb-4">${error.message}</p>
-                    <p class="text-gray-600">Please ensure <code class="bg-gray-100 px-2 py-1 rounded">FW_Veg_Rem_Combined.csv</code> is in the same folder as this HTML file.</p>
-                    <button onclick="location.reload()" class="mt-4 bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600">
+                    <div class="text-left bg-gray-50 p-4 rounded mb-4 border border-gray-200">
+                        <p class="text-sm font-semibold text-gray-700 mb-2">Possible solutions:</p>
+                        <ul class="text-sm text-gray-600 list-disc list-inside space-y-1">
+                            <li>Check your internet connection</li>
+                            <li>Ensure GitHub is accessible from your network</li>
+                            <li>If offline, download <code class="bg-gray-200 px-1 rounded">FW_Veg_Rem_Combined.csv</code> to the same folder</li>
+                            <li>Try refreshing the page (Ctrl+R or Cmd+R)</li>
+                        </ul>
+                    </div>
+                    <button onclick="location.reload()" class="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600">
                         Retry
                     </button>
                 </div>
@@ -1352,21 +1360,56 @@
         }
 
         async function loadData() {
+            // Primary: GitHub raw URL
+            const githubUrl = 'https://raw.githubusercontent.com/varunr89/smokey/main/FW_Veg_Rem_Combined.csv';
+            // Fallback: Local file
+            const localPath = 'FW_Veg_Rem_Combined.csv';
+
             return new Promise((resolve, reject) => {
-                Papa.parse('FW_Veg_Rem_Combined.csv', {
+                // Try GitHub first
+                Papa.parse(githubUrl, {
                     download: true,
                     header: true,
                     dynamicTyping: true,
                     skipEmptyLines: true,
                     complete: function(results) {
-                        rawData = results.data;
-                        resolve();
+                        if (results.data && results.data.length > 0) {
+                            rawData = results.data;
+                            console.log(`✓ Loaded ${rawData.length} records from GitHub`);
+                            resolve();
+                        } else {
+                            console.warn('GitHub returned empty data, trying local file...');
+                            tryLocalFile(resolve, reject);
+                        }
                     },
                     error: function(error) {
-                        reject(new Error('Could not load data file. ' + error.message));
+                        console.warn('GitHub fetch failed:', error.message);
+                        console.log('Attempting to load from local file...');
+                        tryLocalFile(resolve, reject);
                     }
                 });
             });
+
+            function tryLocalFile(resolve, reject) {
+                Papa.parse(localPath, {
+                    download: true,
+                    header: true,
+                    dynamicTyping: true,
+                    skipEmptyLines: true,
+                    complete: function(results) {
+                        if (results.data && results.data.length > 0) {
+                            rawData = results.data;
+                            console.log(`✓ Loaded ${rawData.length} records from local file`);
+                            resolve();
+                        } else {
+                            reject(new Error('Both GitHub and local file loading failed.'));
+                        }
+                    },
+                    error: function(error) {
+                        reject(new Error('Could not load data from GitHub or local file. ' + error.message));
+                    }
+                });
+            }
         }
 
         function cleanData() {
