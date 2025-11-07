@@ -32,7 +32,7 @@ The dashboard loads data directly from GitHub's servers, which means:
 ✅ **Offline capable**: Falls back to local file when needed (see below)
 
 **Technical details:**
-- Data source: `https://raw.githubusercontent.com/varunr89/smokey/main/FW_Veg_Rem_Combined.csv`
+- Data source: `https://raw.githubusercontent.com/varunr89/smokey/master/FW_Veg_Rem_Combined.csv`
 - Load time: 3-6 seconds on typical broadband
 - Cache: Browser may cache for faster subsequent loads
 

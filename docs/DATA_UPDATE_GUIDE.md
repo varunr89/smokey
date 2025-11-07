@@ -6,7 +6,7 @@ This guide explains how to update the wildfire dataset (`FW_Veg_Rem_Combined.csv
 
 The dashboard loads data from GitHub using this URL:
 ```
-https://raw.githubusercontent.com/varunr89/smokey/main/FW_Veg_Rem_Combined.csv
+https://raw.githubusercontent.com/varunr89/smokey/master/FW_Veg_Rem_Combined.csv
 ```
 
 **Key Points:**
@@ -29,10 +29,10 @@ https://raw.githubusercontent.com/varunr89/smokey/main/FW_Veg_Rem_Combined.csv
 2. Run data quality checks (see checklist below)
 3. Upload to GitHub:
    ```bash
-   git pull origin main
+   git pull origin master
    git add FW_Veg_Rem_Combined.csv
    git commit -m "Update wildfire data: [describe change]"
-   git push origin main
+   git push origin master
    ```
 4. Test the dashboard (see Testing Procedures below)
 5. Monitor for user feedback over 24-48 hours
@@ -171,7 +171,7 @@ Look for:
 If immediate updates are critical, add a version parameter:
 ```javascript
 const version = '2025-11-07'; // Update this when data changes
-const githubUrl = `https://raw.githubusercontent.com/varunr89/smokey/main/FW_Veg_Rem_Combined.csv?v=${version}`;
+const githubUrl = `https://raw.githubusercontent.com/varunr89/smokey/master/FW_Veg_Rem_Combined.csv?v=${version}`;
 ```
 
 **Important:** If using cache busting, you must also update `index.html` and distribute it to users.
@@ -187,7 +187,7 @@ git log --oneline
 
 # Revert the commit (creates a new commit that undoes changes)
 git revert <commit-hash>
-git push origin main
+git push origin master
 ```
 
 **Full Rollback (Reset to Previous State):**
@@ -199,7 +199,7 @@ git log --oneline
 git reset --hard <good-commit-hash>
 
 # Force push (WARNING: Use with caution)
-git push --force origin main
+git push --force origin master
 ```
 
 **Using Tagged Versions:**
