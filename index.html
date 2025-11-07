@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMOKEY Wildfire Dashboard (1991-2015)</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Plotly.js -->
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+
+    <!-- PapaParse -->
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f5f5f5;
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #ff6b35;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body class="p-4">
+    <!-- Loading Screen -->
+    <div id="loading" class="fixed inset-0 bg-white flex flex-col items-center justify-center z-50">
+        <div class="loading-spinner mb-4"></div>
+        <h2 class="text-2xl font-bold text-gray-700" id="loading-text">Loading wildfire data...</h2>
+        <p class="text-gray-500 mt-2" id="loading-progress">Initializing...</p>
+    </div>
+
+    <!-- Main Dashboard (hidden until loaded) -->
+    <div id="dashboard" class="hidden">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">🔥 SMOKEY Wildfire Dashboard</h1>
+            <p class="text-gray-600">Exploring U.S. Wildfire Patterns (1991-2015)</p>
+        </header>
+
+        <!-- Filter bar will go here -->
+        <div id="filters" class="mb-6"></div>
+
+        <!-- Visualizations will go here -->
+        <div id="visualizations"></div>
+    </div>
+
+    <script>
+        // Global data storage
+        let rawData = [];
+        let filteredData = [];
+
+        // Initialize dashboard
+        async function initDashboard() {
+            try {
+                updateLoadingText('Loading CSV file...', 'Fetching FW_Veg_Rem_Combined.csv');
+                await loadData();
+
+                updateLoadingText('Processing data...', 'Cleaning 55,367 records');
+                cleanData();
+
+                updateLoadingText('Preparing visualizations...', 'Almost ready!');
+
+                // Hide loading, show dashboard
+                setTimeout(() => {
+                    document.getElementById('loading').classList.add('hidden');
+                    document.getElementById('dashboard').classList.remove('hidden');
+                }, 500);
+
+            } catch (error) {
+                showError(error);
+            }
+        }
+
+        function updateLoadingText(main, progress) {
+            document.getElementById('loading-text').textContent = main;
+            document.getElementById('loading-progress').textContent = progress;
+        }
+
+        function showError(error) {
+            document.getElementById('loading').innerHTML = `
+                <div class="text-center p-8">
+                    <h2 class="text-2xl font-bold text-red-600 mb-4">⚠️ Error Loading Data</h2>
+                    <p class="text-gray-700 mb-4">${error.message}</p>
+                    <p class="text-gray-600">Please ensure <code class="bg-gray-100 px-2 py-1 rounded">FW_Veg_Rem_Combined.csv</code> is in the same folder as this HTML file.</p>
+                    <button onclick="location.reload()" class="mt-4 bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600">
+                        Retry
+                    </button>
+                </div>
+            `;
+        }
+
+        async function loadData() {
+            return new Promise((resolve, reject) => {
+                Papa.parse('FW_Veg_Rem_Combined.csv', {
+                    download: true,
+                    header: true,
+                    dynamicTyping: true,
+                    skipEmptyLines: true,
+                    complete: function(results) {
+                        rawData = results.data;
+                        resolve();
+                    },
+                    error: function(error) {
+                        reject(new Error('Could not load data file. ' + error.message));
+                    }
+                });
+            });
+        }
+
+        function cleanData() {
+            // Filter out corrupted records and clean data
+            filteredData = rawData.filter(row => {
+                // Remove corrupted fire_size_class entries
+                const validClasses = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+                if (!validClasses.includes(row.fire_size_class)) {
+                    return false;
+                }
+
+                // Ensure basic required fields exist
+                if (!row.state || !row.disc_pre_year) {
+                    return false;
+                }
+
+                return true;
+            });
+
+            // Add derived fields
+            filteredData.forEach(row => {
+                // Map state to region
+                row.region = getRegion(row.state);
+
+                // Map month to season
+                row.season = getSeason(row.discovery_month);
+
+                // Classify as human vs natural
+                row.is_human_caused = isHumanCaused(row.stat_cause_descr);
+
+                // Handle missing weather data
+                ['Temp_pre_30', 'Temp_pre_15', 'Temp_pre_7', 'Temp_cont',
+                 'Wind_pre_30', 'Wind_pre_15', 'Wind_pre_7', 'Wind_cont',
+                 'Hum_pre_30', 'Hum_pre_15', 'Hum_pre_7', 'Hum_cont',
+                 'Prec_pre_30', 'Prec_pre_15', 'Prec_pre_7', 'Prec_cont'].forEach(field => {
+                    if (row[field] === -1.0) {
+                        row[field] = null;
+                    }
+                });
+            });
+
+            console.log(`Loaded ${filteredData.length} valid records`);
+        }
+
+        function getRegion(state) {
+            const regions = {
+                'West': ['WA', 'OR', 'CA', 'NV', 'ID', 'MT', 'WY', 'UT', 'CO', 'AZ', 'NM', 'AK', 'HI'],
+                'Midwest': ['ND', 'SD', 'NE', 'KS', 'MN', 'IA', 'MO', 'WI', 'IL', 'MI', 'IN', 'OH'],
+                'South': ['TX', 'OK', 'AR', 'LA', 'MS', 'AL', 'TN', 'KY', 'WV', 'VA', 'NC', 'SC', 'GA', 'FL', 'MD', 'DE', 'DC'],
+                'Northeast': ['PA', 'NY', 'NJ', 'CT', 'RI', 'MA', 'VT', 'NH', 'ME']
+            };
+
+            for (let [region, states] of Object.entries(regions)) {
+                if (states.includes(state)) return region;
+            }
+            return 'Other';
+        }
+
+        function getSeason(month) {
+            const seasons = {
+                'Winter': ['Dec', 'Jan', 'Feb'],
+                'Spring': ['Mar', 'Apr', 'May'],
+                'Summer': ['Jun', 'Jul', 'Aug'],
+                'Fall': ['Sep', 'Oct', 'Nov']
+            };
+
+            for (let [season, months] of Object.entries(seasons)) {
+                if (months.includes(month)) return season;
+            }
+            return 'Unknown';
+        }
+
+        function isHumanCaused(cause) {
+            const humanCauses = ['Arson', 'Debris Burning', 'Equipment Use', 'Campfire',
+                                'Children', 'Smoking', 'Fireworks', 'Railroad', 'Powerline', 'Structure'];
+            return humanCauses.includes(cause);
+        }
+
+        // Start the dashboard
+        initDashboard();
+    </script>
+</body>
+</html>
