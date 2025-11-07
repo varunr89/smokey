@@ -13,24 +13,45 @@ An interactive, browser-based dashboard for exploring U.S. wildfire patterns fro
 
 ## 🚀 Quick Start
 
-**No installation required!** Just follow these 3 simple steps:
+**No installation required!** Just follow these 2 simple steps:
 
-1. **Download** both files to the same folder:
+1. **Download** the dashboard file:
    - `index.html` (the dashboard)
-   - `FW_Veg_Rem_Combined.csv` (the data)
 
-2. **Double-click** `index.html`
+2. **Double-click** `index.html` and start exploring!
 
-3. **Explore!** Your browser will open the dashboard automatically
+Your browser will open and automatically fetch the latest wildfire data from GitHub. That's it! No Python, no command line, no configuration.
 
-That's it! No Python, no command line, no configuration.
+### 🌐 How It Works
+
+The dashboard loads data directly from GitHub's servers, which means:
+
+✅ **Always up-to-date**: When the data file is updated on GitHub, the dashboard automatically reflects the changes
+✅ **Single file distribution**: Share just the HTML file (~80KB) - no need to bundle the 19MB CSV
+✅ **Reduced storage**: Teachers only need to distribute one small file
+✅ **Offline capable**: Falls back to local file when needed (see below)
+
+**Technical details:**
+- Data source: `https://raw.githubusercontent.com/varunr89/smokey/main/FW_Veg_Rem_Combined.csv`
+- Load time: 3-6 seconds on typical broadband
+- Cache: Browser may cache for faster subsequent loads
+
+### 📴 Offline Use (Optional)
+
+If you need to use the dashboard without internet:
+
+1. Download both `index.html` and `FW_Veg_Rem_Combined.csv` to the same folder
+2. The dashboard will automatically use the local file when GitHub is unavailable
+3. Perfect for classrooms without reliable internet
 
 ## 💻 System Requirements
 
 - **Browser**: Chrome 80+, Firefox 75+, Safari 13+, or Edge 80+ (any from 2020 onwards)
 - **Operating System**: Windows, Mac, Linux, or ChromeOS
-- **Internet**: Required only for initial load (CDN libraries)
+- **Internet**: Required for initial data load (~19MB download)
 - **Screen**: Best on desktop (1920x1080), works on tablets too
+
+**Bandwidth note**: First load downloads ~19MB of data from GitHub. Subsequent loads may use browser cache for faster performance.
 
 ## 🎯 Features
 
@@ -122,21 +143,26 @@ Students can:
 
 ### Share with Students
 
-**Option 1: Local Files**
-- Zip the folder (index.html + CSV)
-- Share via email, Google Drive, or USB
-- Students unzip and open index.html
+**Option 1: Direct HTML File** ⭐ Recommended
+- Share just the `index.html` file (via email, Google Drive, or USB)
+- Students open it in their browser
+- Dashboard automatically fetches latest data from GitHub
+- No need to redistribute when data updates
 
-**Option 2: GitHub Pages**
-1. Create a GitHub repository
-2. Upload both files
-3. Enable GitHub Pages in Settings
-4. Share the public URL
+**Option 2: Host on School Website**
+- Upload `index.html` to any web server
+- Share the URL with students
+- Works instantly, always shows current data
 
-**Option 3: School Server**
-- Upload both files to any web server
-- No server-side processing needed
-- Works instantly
+**Option 3: GitHub Pages**
+1. Fork this repository
+2. Enable GitHub Pages in Settings
+3. Share the public URL: `https://yourusername.github.io/smokey/`
+
+**Option 4: Offline Bundle** (No internet required)
+- Zip folder with both `index.html` and `FW_Veg_Rem_Combined.csv`
+- Share via USB drive or local network
+- Dashboard uses local file automatically
 
 ## 📖 Data Dictionary
 
