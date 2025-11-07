@@ -41,6 +41,30 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             margin-bottom: 20px;
         }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #3b82f6;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            background: #3b82f6;
+            cursor: pointer;
+            border-radius: 50%;
+            border: none;
+        }
     </style>
 </head>
 <body class="p-4">
@@ -53,9 +77,12 @@
 
     <!-- Main Dashboard (hidden until loaded) -->
     <div id="dashboard" class="hidden">
-        <header class="text-center mb-8">
+        <header class="text-center mb-8" role="banner">
             <h1 class="text-4xl font-bold text-gray-800 mb-2">🔥 SMOKEY Wildfire Dashboard</h1>
             <p class="text-gray-600">Exploring U.S. Wildfire Patterns (1991-2015)</p>
+            <p class="text-sm text-gray-500 mt-2">
+                Interactive data visualization for educators and the public
+            </p>
         </header>
 
         <!-- Filter Bar -->
@@ -64,14 +91,14 @@
                 <!-- Geography Filters -->
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">📍 State</label>
-                    <select id="filter-state" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                    <select id="filter-state" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500" aria-label="Filter by state">
                         <option value="all">All States</option>
                     </select>
                 </div>
 
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">🗺️ Region</label>
-                    <select id="filter-region" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                    <select id="filter-region" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500" aria-label="Filter by region">
                         <option value="all">All Regions</option>
                         <option value="West">West</option>
                         <option value="Midwest">Midwest</option>
@@ -80,24 +107,31 @@
                     </select>
                 </div>
 
-                <!-- Year Range (placeholder for now) -->
+                <!-- Year Range -->
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">📅 Year Range</label>
-                    <div class="text-sm text-gray-500 py-2">1991 - 2015</div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        📅 Year Range: <span id="year-range-label">1991 - 2015</span>
+                    </label>
+                    <div class="px-2">
+                        <input type="range" id="filter-year-min" min="1991" max="2015" value="1991"
+                               class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" aria-label="Minimum year">
+                        <input type="range" id="filter-year-max" min="1991" max="2015" value="2015"
+                               class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-1" aria-label="Maximum year">
+                    </div>
                 </div>
 
                 <!-- Fire Cause (placeholder) -->
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">🔥 Cause</label>
-                    <select id="filter-cause" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                    <select id="filter-cause" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500" aria-label="Filter by fire cause">
                         <option value="all">All Causes</option>
                     </select>
                 </div>
 
-                <!-- Fire Size Class (placeholder) -->
+                <!-- Fire Size Class -->
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">📏 Size</label>
-                    <select id="filter-size" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                    <select id="filter-size" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500" aria-label="Filter by fire size class">
                         <option value="all">All Sizes</option>
                     </select>
                 </div>
@@ -108,7 +142,7 @@
                 <div id="filter-summary" class="text-sm text-gray-600">
                     Showing: <span id="record-count" class="font-bold text-blue-600">0</span> fires
                 </div>
-                <button id="reset-filters" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm font-semibold">
+                <button id="reset-filters" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm font-semibold" aria-label="Reset all filters to default">
                     Reset All Filters
                 </button>
             </div>
@@ -376,6 +410,24 @@
                 </div>
             </div>
         </div>
+
+        <!-- Footer -->
+        <footer class="mt-12 mb-6 text-center text-sm text-gray-600" role="contentinfo">
+            <div class="border-t border-gray-300 pt-6">
+                <p class="mb-2">
+                    <strong>SMOKEY Wildfire Dashboard</strong> | Data: 1991-2015 | 55,367 wildfire incidents
+                </p>
+                <p class="mb-2">
+                    Sources: U.S. Forest Service, NOAA, USGS
+                </p>
+                <p class="text-xs text-gray-500">
+                    Created for educational purposes.
+                    Dashboard built with Plotly.js, PapaParse, and Tailwind CSS.
+                    <br>
+                    Remember: <em>"Only YOU can prevent wildfires!"</em> - Smokey Bear
+                </p>
+            </div>
+        </footer>
     </div>
 
     <script>
@@ -404,6 +456,51 @@
                 panel.classList.add('hidden');
                 icon.textContent = '▼';
             }
+        }
+
+        // Debounce helper
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        function initializeYearSliders() {
+            const minSlider = document.getElementById('filter-year-min');
+            const maxSlider = document.getElementById('filter-year-max');
+            const label = document.getElementById('year-range-label');
+
+            const updateYearRange = debounce(() => {
+                let minYear = parseInt(minSlider.value);
+                let maxYear = parseInt(maxSlider.value);
+
+                // Ensure min doesn't exceed max
+                if (minYear > maxYear) {
+                    minYear = maxYear;
+                    minSlider.value = minYear;
+                }
+
+                // Ensure max doesn't go below min
+                if (maxYear < minYear) {
+                    maxYear = minYear;
+                    maxSlider.value = maxYear;
+                }
+
+                currentFilters.yearMin = minYear;
+                currentFilters.yearMax = maxYear;
+                label.textContent = `${minYear} - ${maxYear}`;
+
+                updateFilteredData();
+            }, 300);
+
+            minSlider.addEventListener('input', updateYearRange);
+            maxSlider.addEventListener('input', updateYearRange);
         }
 
         function initializeFilters() {
@@ -446,6 +543,9 @@
             document.getElementById('filter-cause').addEventListener('change', handleFilterChange);
             document.getElementById('filter-size').addEventListener('change', handleFilterChange);
             document.getElementById('reset-filters').addEventListener('click', resetFilters);
+
+            // Initialize year sliders
+            initializeYearSliders();
 
             // Initial update
             updateFilteredData();
@@ -528,6 +628,9 @@
             document.getElementById('filter-region').value = 'all';
             document.getElementById('filter-cause').value = 'all';
             document.getElementById('filter-size').value = 'all';
+            document.getElementById('filter-year-min').value = 1991;
+            document.getElementById('filter-year-max').value = 2015;
+            document.getElementById('year-range-label').textContent = '1991 - 2015';
 
             updateFilteredData();
         }
