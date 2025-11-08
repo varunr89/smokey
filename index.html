@@ -506,29 +506,30 @@
         }
 
         function initializeFilters() {
-            // Populate state dropdown
-            const states = [...new Set(filteredData.map(r => r.state))].sort();
+            // Populate state dropdown - only show top states by fire count
+            const stateCounts = {};
+            filteredData.forEach(r => {
+                stateCounts[r.state] = (stateCounts[r.state] || 0) + 1;
+            });
+            const topStates = Object.entries(stateCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 20)  // Top 20 states
+                .map(entry => entry[0])
+                .sort();
+
             const stateSelect = document.getElementById('filter-state');
-            states.forEach(state => {
+            topStates.forEach(state => {
                 const option = document.createElement('option');
                 option.value = state;
                 option.textContent = state;
                 stateSelect.appendChild(option);
             });
 
-            // Populate cause dropdown
-            const causes = [...new Set(filteredData.map(r => r.stat_cause_descr))].filter(c => c).sort();
+            // Populate cause dropdown - simplified categories only
             const causeSelect = document.getElementById('filter-cause');
             causeSelect.innerHTML = '<option value="all">All Causes</option>';
-            causeSelect.innerHTML += '<option value="human">Human-Caused</option>';
-            causeSelect.innerHTML += '<option value="natural">Natural (Lightning)</option>';
-            causeSelect.innerHTML += '<option disabled>──────────</option>';
-            causes.forEach(cause => {
-                const option = document.createElement('option');
-                option.value = cause;
-                option.textContent = cause;
-                causeSelect.appendChild(option);
-            });
+            causeSelect.innerHTML += '<option value="human">Human-Caused (70%)</option>';
+            causeSelect.innerHTML += '<option value="natural">Natural/Lightning (30%)</option>';
 
             // Populate size class dropdown
             const sizeSelect = document.getElementById('filter-size');
